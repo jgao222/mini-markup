@@ -1,7 +1,8 @@
-use std::{fs};
+use std::fs;
 use clap::Parser;
 use anyhow::{Result, Context};
-use mini_markup::{mxml_string_to_xml, replace_bracket_escapes};
+use mini_markup::{mxml_to_xml};
+use args::Args;
 
 mod args;
 
@@ -25,7 +26,7 @@ impl Printer {
 }
 
 fn main() -> Result<()> {
-    let args = args::Args::parse();
+    let args = Args::parse();
 
     let p = Printer {verbose: args.verbose};
     p.println("Program started, arguments parsed");
@@ -37,12 +38,8 @@ fn main() -> Result<()> {
     p.println("File read success");
     p.print("Performing conversion... ");
 
-    let result = mxml_string_to_xml(f).context("mxml conversion failed")?;
+    let result = mxml_to_xml(f).context("mxml conversion failed")?;
     p.println("Conversion success");
-
-    p.print("Replacing custom escape characters");
-    let result = replace_bracket_escapes(result);
-    p.println("Successfully replaced curly bracket escapes");
 
     p.println("Attempting file write");
     fs::write(args.output_file, result).context("Failed to write to file")?;
