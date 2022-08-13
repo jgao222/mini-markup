@@ -1,6 +1,6 @@
+use anyhow::{anyhow, Result};
+use mini_markup::mxml_to_xml;
 use std::fs;
-use anyhow::{Result, anyhow};
-use mini_markup::{mxml_to_xml};
 
 #[test]
 fn conversion_file_simple() -> Result<()> {
@@ -24,4 +24,3 @@ fn conversion_file_with_escapes() -> Result<()> {
         Err(anyhow!("Test failed, {} != {}", actual, expected))
     }
 }
-

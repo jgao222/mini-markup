@@ -1,5 +1,5 @@
 /// Library functions for the mxml-conversion program
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 
 pub fn mxml_to_xml(source: String) -> Result<String> {
     let scopes_converted = mxml_scopes_to_xml(source)?;
@@ -7,7 +7,7 @@ pub fn mxml_to_xml(source: String) -> Result<String> {
     Ok(escapes_converted)
 }
 
-pub fn mxml_scopes_to_xml(source: String) -> Result<String> {
+fn mxml_scopes_to_xml(source: String) -> Result<String> {
     // TODO this also won't work if there are curly braces in other parts of the html file,
     // like if a CSS file is inlined in stylesheet tag, or if JavaScript is inlined in a script tag
     let mut tag_stack: Vec<String> = Vec::new();
@@ -26,16 +26,16 @@ pub fn mxml_scopes_to_xml(source: String) -> Result<String> {
                     bail!(format!("Couldn't find a tag before the scope at {}", index))
                 }
                 // we just found a tag, so remove whitespace b/w opening tag and scope opener
-                out = out.trim().to_string();  // this may be inefficient
-            },
+                out = out.trim().to_string(); // this may be inefficient
+            }
             '}' => {
-                if let Some(tag)= tag_stack.pop() {
+                if let Some(tag) = tag_stack.pop() {
                     out.push_str(format!("</{}>", tag).as_str());
                 } else {
                     // also need to solve this with the TODO above
                     bail!("Unmatched closing tag");
                 }
-            },
+            }
             _ => out.push(*char),
         }
     }
@@ -45,7 +45,7 @@ pub fn mxml_scopes_to_xml(source: String) -> Result<String> {
 
 /// Replaces the custom mxml escape codes `&lbrkt;` and `&rbrkt;` with the characters
 /// `{` and `}` respectively.
-pub fn replace_bracket_escapes(source: String) -> String {
+fn replace_bracket_escapes(source: String) -> String {
     // a manual implementation could be more efficient in one pass as opposed to probably two
     source.replace("&lbrkt;", "{").replace("&rbrkt;", "}")
 }
@@ -57,7 +57,7 @@ pub fn replace_bracket_escapes(source: String) -> String {
 /// `index`: index into the given vector, as the position of a `{` character
 /// # Panics
 /// If `chars[index]` is not `{`, panics
-fn find_tag_name_before_scope(chars: &Vec<char>, index: usize) -> Option<String> {
+fn find_tag_name_before_scope(chars: &[char], index: usize) -> Option<String> {
     assert!(chars[index] == '{');
     let mut index = index - 1;
     while index > 0 && chars[index].is_whitespace() {
@@ -87,13 +87,12 @@ fn find_tag_name_before_scope(chars: &Vec<char>, index: usize) -> Option<String>
         // something weird happened, we got to start of file without finding tag opener
         return None;
     }
-    Some(chars[index+1..index_space].iter().collect())
+    Some(chars[index + 1..index_space].iter().collect())
 }
-
 
 #[cfg(test)]
 mod tests {
-    use crate::{replace_bracket_escapes, mxml_scopes_to_xml, find_tag_name_before_scope};
+    use crate::{find_tag_name_before_scope, mxml_scopes_to_xml, replace_bracket_escapes};
 
     #[test]
     fn bracket_escapes_single() {
@@ -122,20 +121,23 @@ mod tests {
 
     #[test]
     fn find_tag_name_simple() {
-        let chars = "<banana> {".chars().collect();
+        let chars: Vec<char> = "<banana> {".chars().collect();
         assert_eq!("banana", find_tag_name_before_scope(&chars, 9).unwrap());
     }
 
     #[test]
     fn find_tag_name_with_attrs() {
-        let chars: Vec<char> = "<div style=\"border-width: 10px, border-radius: 2px\" on_click=stuff> {".chars().collect();
+        let chars: Vec<char> =
+            "<div style=\"border-width: 10px, border-radius: 2px\" on_click=stuff> {"
+                .chars()
+                .collect();
         let index = chars.len() - 1;
         assert_eq!("div", find_tag_name_before_scope(&chars, index).unwrap());
     }
 
     #[test]
     fn find_tag_name_none_simple() {
-        let chars = "text {".chars().collect();
+        let chars: Vec<char> = "text {".chars().collect();
         assert!(find_tag_name_before_scope(&chars, 5).is_none());
     }
 }

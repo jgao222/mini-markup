@@ -1,8 +1,8 @@
-use std::fs;
-use clap::Parser;
-use anyhow::{Result, Context};
-use mini_markup::{mxml_to_xml};
+use anyhow::{Context, Result};
 use args::Args;
+use clap::Parser;
+use mini_markup::mxml_to_xml;
+use std::fs;
 
 mod args;
 
@@ -28,7 +28,9 @@ impl Printer {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let p = Printer {verbose: args.verbose};
+    let p = Printer {
+        verbose: args.verbose,
+    };
     p.println("Program started, arguments parsed");
 
     p.print("Reading file... ");
