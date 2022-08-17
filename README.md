@@ -2,7 +2,7 @@
 Mini-markup is a CLI program to convert between a miniature XML-like syntax and XML.
 
 ### New Syntax
-Call like `./mini_markup(.exe) file1.txt file2.txt`, then write this:
+Write this:
 ```xml
 <!-- file1.txt -->
 <tagName attribute="value"> {
@@ -11,7 +11,7 @@ Call like `./mini_markup(.exe) file1.txt file2.txt`, then write this:
     }
 }
 ```
-and automatically convert it to this:
+and call `./mini_markup(.exe) file1.txt file2.txt` to convert it to this:
 ```xml
 <!-- file2.txt -->
 <tagName attribute="value">
@@ -20,7 +20,7 @@ and automatically convert it to this:
     </childTag>
 </tagName>
 ```
-Pass the `--help` flag to get a full list of options.
+And back, if desired. Pass the `--help` flag to get a full list of options.
 
 ### Why?
 I don't particularly like writing HTML by hand, and having to type out closing tag names
