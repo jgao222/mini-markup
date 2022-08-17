@@ -1,11 +1,10 @@
 # Mini-Markup
-Mini-markup is a CLI program to convert a minified XML-like syntax into XML.
-
-It currently only works to convert in that one direction.
+Mini-markup is a CLI program to convert between a miniature XML-like syntax and XML.
 
 ### New Syntax
-Write this:
+Call like `./mini_markup(.exe) file1.txt file2.txt`, then write this:
 ```xml
+<!-- file1.txt -->
 <tagName attribute="value"> {
     <childTag> {
         Content goes here!
@@ -14,12 +13,14 @@ Write this:
 ```
 and automatically convert it to this:
 ```xml
+<!-- file2.txt -->
 <tagName attribute="value">
     <childTag>
         Content goes here!
     </childTag>
 </tagName>
 ```
+Pass the `--help` flag to get a full list of options.
 
 ### Why?
 I don't particularly like writing HTML by hand, and having to type out closing tag names

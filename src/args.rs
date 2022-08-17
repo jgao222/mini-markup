@@ -9,6 +9,7 @@ pub struct Args {
     /// Whether the program should print verbose output
     pub verbose: bool,
     #[clap(short, long, arg_enum, value_parser)]
+    /// The target format, defaults to XML
     pub target: Option<Target>,
     #[clap(value_parser)]
     /// The file path of the file to convert from
