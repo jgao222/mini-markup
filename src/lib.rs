@@ -38,7 +38,50 @@ pub fn xml_to_mxml(source: String) -> Result<String> {
     // to end in `/>`, so it would be possible to check
     // not so easy with HTML though.
 
-    todo!()
+    let mut tag_name_stack: Vec<String> = Vec::new();
+
+    let chars: Vec<char> = source.chars().collect();
+    let mut out = String::new();
+
+    let mut in_closing_tag = false;
+    for (index, char) in chars.iter().enumerate() {
+        // in empty element tag case do default case, no need to open or close any scopes
+        if *char == '>' && chars[index - 1] != '/' {
+            if in_closing_tag {
+                out.push('}');  // the end of the scope
+                in_closing_tag = false;
+            } else if let Some(StartTag(tag_name)) = find_tag_name_at(&chars, index) {
+                tag_name_stack.push(tag_name);
+                out.push_str("> {");  // yes this is hardcoded
+                                             // TODO make whitespace customizable?
+            } else {
+                bail!(format!("Couldn't find well-formed tag around position {}", index))
+            }
+        } else if *char == '<' && chars[index + 1] == '/' {
+            // this assumes all end tags start with `</` and there is no whitespace between < and /
+            // TODO check if this is a reasonable assumption based on XML spec
+            if let Some(EndTag(tag_name)) = find_tag_name_at(&chars, index) {
+                if let Some(matched_name) = tag_name_stack.pop() {
+                    if tag_name == matched_name {
+                        in_closing_tag = true;
+                    } else {
+                        bail!(format!("Mismatched end tag at position {index}"))
+                    }
+                } else {
+                    bail!(format!("Extra unmatched end tag at position {index}"))
+                }
+            } else {
+                bail!(format!("Couldn't find well-formed tag around position {}", index))
+            }
+
+        } else {
+            if !in_closing_tag {
+                out.push(*char);
+            }
+        }
+    }
+
+    Ok(out)
 }
 
 fn mxml_scopes_to_xml(source: String) -> Result<String> {
