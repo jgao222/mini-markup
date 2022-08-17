@@ -2,6 +2,8 @@ use anyhow::{anyhow, Result};
 use mini_markup::{mxml_to_xml, xml_to_mxml};
 use std::fs;
 
+static TEST_DIR: &str = "./tests/files/";
+
 macro_rules! test_file_conversion_to_xml {
     ( $test_name:ident, $file1:expr, $file2:expr ) => {
         #[test]
@@ -83,4 +85,16 @@ test_file_conversion_from_xml!(
     readme_test_from_xml,
     "./tests/files/test_readme_expected.txt",
     "./tests/files/test_readme.txt"
+);
+
+test_file_conversion_from_xml!(
+    ignore_comments1,
+    format!("{TEST_DIR}test_ignore_comments.txt"),
+    format!("{TEST_DIR}test_ignore_comments_expected.txt")
+);
+
+test_file_conversion_from_xml!(
+    ignore_comments2,
+    format!("{TEST_DIR}test_ignore_comments2.txt"),
+    format!("{TEST_DIR}test_ignore_comments2_expected.txt")
 );

@@ -1,4 +1,4 @@
-<!-- file1.txt -->
+<!-- file.txt -->
 <tagName attribute="value"> {
     <childTag> {
         Content goes here!
