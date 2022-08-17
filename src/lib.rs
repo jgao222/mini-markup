@@ -198,6 +198,9 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
             _ => out.push(*char),
         }
     }
+    if !tag_stack.is_empty() {
+        bail!("Found unclosed scope(s)")
+    }
 
     Ok(out)
 }
@@ -373,5 +376,17 @@ mod tests {
     fn mxml_to_xml_comments_ignored() {
         let source = "<!-- <this would be valid mxml> { but it's in a comment } -->";
         assert_eq!(mxml_to_xml(source.into()).unwrap(), source);
+    }
+
+    #[test]
+    fn mxml_to_xml_unclosed_error() {
+        let source = "<tag attr=a> { unclosed";
+        assert!(mxml_scopes_to_xml(source.into(), HashSet::new()).is_err());
+    }
+
+    #[test]
+    fn xml_to_mxml_unclosed_error() {
+        let source = "<tag attr= a><inner stuff></inner>".to_string();
+        assert!(xml_scopes_to_mxml(source, HashSet::new()).is_err());
     }
 }
