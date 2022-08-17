@@ -41,8 +41,8 @@ fn main() -> Result<()> {
     p.print("Performing conversion... ");
 
     let function = match args.target {
-        Some(args::Target::MXML) => xml_to_mxml,
-        Some(args::Target::XML) | None => mxml_to_xml,
+        Some(args::Target::Mxml) => xml_to_mxml,
+        Some(args::Target::Xml) | None => mxml_to_xml,
     };
 
     let result = function(file_string).context("mxml conversion failed")?;

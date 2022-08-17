@@ -1,6 +1,5 @@
 /// Library functions for the mxml-conversion program
 use anyhow::{bail, Result};
-use Tag::*;
 
 /// Convert a file from MXML (curly brackets) into XML (end tags)
 /// # Params
@@ -48,19 +47,22 @@ pub fn xml_to_mxml(source: String) -> Result<String> {
         // in empty element tag case do default case, no need to open or close any scopes
         if *char == '>' && chars[index - 1] != '/' {
             if in_closing_tag {
-                out.push('}');  // the end of the scope
+                out.push('}'); // the end of the scope
                 in_closing_tag = false;
-            } else if let Some(StartTag(tag_name)) = find_tag_name_at(&chars, index) {
+            } else if let Some(XMLTag::Start(tag_name)) = find_tag_name_at(&chars, index) {
                 tag_name_stack.push(tag_name);
-                out.push_str("> {");  // yes this is hardcoded
-                                             // TODO make whitespace customizable?
+                out.push_str("> {"); // yes this is hardcoded
+                                     // TODO make whitespace customizable?
             } else {
-                bail!(format!("Couldn't find well-formed tag around position {}", index))
+                bail!(format!(
+                    "Couldn't find well-formed tag around position {}",
+                    index
+                ))
             }
         } else if *char == '<' && chars[index + 1] == '/' {
             // this assumes all end tags start with `</` and there is no whitespace between < and /
             // TODO check if this is a reasonable assumption based on XML spec
-            if let Some(EndTag(tag_name)) = find_tag_name_at(&chars, index) {
+            if let Some(XMLTag::End(tag_name)) = find_tag_name_at(&chars, index) {
                 if let Some(matched_name) = tag_name_stack.pop() {
                     if tag_name == matched_name {
                         in_closing_tag = true;
@@ -71,13 +73,13 @@ pub fn xml_to_mxml(source: String) -> Result<String> {
                     bail!(format!("Extra unmatched end tag at position {index}"))
                 }
             } else {
-                bail!(format!("Couldn't find well-formed tag around position {}", index))
+                bail!(format!(
+                    "Couldn't find well-formed tag around position {}",
+                    index
+                ))
             }
-
-        } else {
-            if !in_closing_tag {
-                out.push(*char);
-            }
+        } else if !in_closing_tag {
+            out.push(*char);
         }
     }
 
@@ -149,8 +151,8 @@ fn find_tag_name_before_scope(chars: &[char], index: usize) -> Option<String> {
     // otherwise go ahead and find the tag name, which should be the first segment of characters
     // after the opening `<`, before the first space (or the closing `>` if no space/attrs)
     match find_tag_name_at(chars, index) {
-        Some(StartTag(s)) => Some(s),  // only take start tags
-        _ => None  // reject if it was a self-closing or end tag!
+        Some(XMLTag::Start(s)) => Some(s), // only take start tags
+        _ => None,                         // reject if it was a self-closing or end tag!
     }
 }
 
@@ -161,7 +163,7 @@ fn find_tag_name_before_scope(chars: &[char], index: usize) -> Option<String> {
 /// index - the starting index to look from
 /// # Preconditions
 /// `index` is the index of either the starting `<` or ending `>` of the tag
-fn find_tag_name_at(chars: &[char], index: usize) -> Option<Tag> {
+fn find_tag_name_at(chars: &[char], index: usize) -> Option<XMLTag> {
     let mut index = index;
     if chars[index] == '>' {
         while index > 0 && chars[index] != '<' {
@@ -176,20 +178,23 @@ fn find_tag_name_at(chars: &[char], index: usize) -> Option<Tag> {
         index_space += 1;
     }
     if chars[index + 1] == '/' {
-        Some(EndTag(chars[index + 2..index_space].iter().collect()))
+        Some(XMLTag::End(chars[index + 2..index_space].iter().collect()))
     } else if chars[index_space - 1] == '/' {
-        Some(EmptyElementTag(chars[index + 1..index_space - 1].iter().collect()))
+        Some(XMLTag::EmptyElement(
+            chars[index + 1..index_space - 1].iter().collect(),
+        ))
     } else {
-        Some(StartTag(chars[index + 1..index_space].iter().collect()))
+        Some(XMLTag::Start(
+            chars[index + 1..index_space].iter().collect(),
+        ))
     }
 }
 
-enum Tag {
-    StartTag(String),
-    EndTag(String),
-    EmptyElementTag(String),
+enum XMLTag {
+    Start(String),
+    End(String),
+    EmptyElement(String),
 }
-
 
 #[cfg(test)]
 mod tests {

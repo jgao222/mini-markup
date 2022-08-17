@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Parser, clap_derive::ArgEnum};
+use clap::{clap_derive::ArgEnum, Parser};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about=None)]
@@ -21,6 +21,6 @@ pub struct Args {
 
 #[derive(Clone, Copy, ArgEnum)]
 pub enum Target {
-    MXML,
-    XML
+    Mxml,
+    Xml,
 }

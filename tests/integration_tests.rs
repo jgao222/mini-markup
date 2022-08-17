@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use mini_markup::{mxml_to_xml, xml_to_mxml};
 use std::fs;
 
-
 macro_rules! test_file_conversion_to_xml {
     ( $test_name:ident, $file1:expr, $file2:expr ) => {
         #[test]
@@ -35,7 +34,6 @@ macro_rules! test_file_conversion_from_xml {
     };
 }
 
-
 // #[test]
 // fn conversion_file_simple() -> Result<()> {
 //     let source = fs::read_to_string("./tests/files/test1.txt")?;
@@ -46,7 +44,11 @@ macro_rules! test_file_conversion_from_xml {
 //         Err(anyhow!("Test failed"))
 //     }
 // }
-test_file_conversion_to_xml!(file_simple, "./tests/files/test1.txt", "./tests/files/expected1.txt");
+test_file_conversion_to_xml!(
+    file_simple,
+    "./tests/files/test1.txt",
+    "./tests/files/expected1.txt"
+);
 
 // #[test]
 // fn conversion_file_with_escapes() -> Result<()> {
@@ -59,6 +61,14 @@ test_file_conversion_to_xml!(file_simple, "./tests/files/test1.txt", "./tests/fi
 //         Err(anyhow!("Test failed, {} != {}", actual, expected))
 //     }
 // }
-test_file_conversion_to_xml!(file_with_escapes, "./tests/files/test2.txt", "./tests/files/expected2.txt");
+test_file_conversion_to_xml!(
+    file_with_escapes,
+    "./tests/files/test2.txt",
+    "./tests/files/expected2.txt"
+);
 
-test_file_conversion_from_xml!(file_simple_from_xml, "./tests/files/expected1.txt", "./tests/files/test1.txt");
+test_file_conversion_from_xml!(
+    file_simple_from_xml,
+    "./tests/files/expected1.txt",
+    "./tests/files/test1.txt"
+);
