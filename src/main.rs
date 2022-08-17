@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use args::Args;
 use clap::Parser;
-use mini_markup::{mxml_to_xml, xml_to_mxml};
+use mini_markup::{html_to_mxml, mxml_to_html, mxml_to_xml, xml_to_mxml};
 use std::fs;
 
 mod args;
@@ -41,11 +41,23 @@ fn main() -> Result<()> {
     p.print("Performing conversion... ");
 
     let function = match args.target {
-        Some(args::Target::Mxml) => xml_to_mxml,
-        Some(args::Target::Xml) | None => mxml_to_xml,
+        Some(args::Target::Mxml) => {
+            if args.html {
+                html_to_mxml
+            } else {
+                xml_to_mxml
+            }
+        }
+        Some(args::Target::Xml) | None => {
+            if args.html {
+                mxml_to_html
+            } else {
+                mxml_to_xml
+            }
+        }
     };
 
-    let result = function(file_string).context("mxml conversion failed")?;
+    let result = function(file_string).context("conversion failed")?;
     p.println("Conversion success");
 
     p.println("Attempting file write");

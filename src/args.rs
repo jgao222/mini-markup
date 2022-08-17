@@ -6,8 +6,11 @@ use clap::{clap_derive::ArgEnum, Parser};
 #[clap(author, version, about, long_about=None)]
 pub struct Args {
     #[clap(short, long, action)]
-    /// Whether the program should print verbose output
+    /// Print verbose output
     pub verbose: bool,
+    #[clap(short, long, action)]
+    /// Use HTML void-element aware conversion (otherwise HTML conversion may not work correctly)
+    pub html: bool,
     #[clap(short, long, arg_enum, value_parser)]
     /// The target format, defaults to XML
     pub target: Option<Target>,

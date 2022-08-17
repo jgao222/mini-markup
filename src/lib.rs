@@ -1,11 +1,13 @@
+use anyhow::{bail, Result};
 /// Library functions for the mxml-conversion program
 use std::collections::HashSet;
-use anyhow::{bail, Result};
-
 
 // see https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 // !DOCTYPE is also included, since in raw form it looks like an unclosed html tag
-pub const HTML_VOID_ELEMENTS: [&str; 14] = ["!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"];
+pub const HTML_VOID_ELEMENTS: [&str; 14] = [
+    "!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+    "source", "track", "wbr",
+];
 // we will need to construct this into a set every time it is needed, is that worth it?
 
 /// Convert from MXML (curly brackets) into XML (end tags)
@@ -85,7 +87,7 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
                 if !void_element_tags.contains(tag_name.as_str()) {
                     tag_name_stack.push(tag_name);
                     out.push_str("> {"); // yes this is hardcoded
-                    // TODO make whitespace customizable?
+                                         // TODO make whitespace customizable?
                 } else {
                     out.push('>');
                 }
@@ -104,7 +106,8 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
                         if tag_name == matched_name {
                             in_closing_tag = true;
                         } else {
-                            bail!(format!("Mismatched end tag at position {index}"))
+                            // TODO: clean this up... or leave a verbose error message?
+                            bail!(format!("Mismatched end tag at position {index}: ...{}...\nExpected {matched_name}, got {tag_name}", chars[index-10..index+10].iter().collect::<String>()))
                         }
                     } else {
                         bail!(format!("Extra unmatched end tag at position {index}"))
@@ -300,7 +303,10 @@ mod tests {
     fn conversion_simple() {
         let source = "<tagname> {}";
         let expected = "<tagname></tagname>";
-        assert_eq!(mxml_scopes_to_xml(source.into(), HashSet::new()).unwrap(), expected);
+        assert_eq!(
+            mxml_scopes_to_xml(source.into(), HashSet::new()).unwrap(),
+            expected
+        );
     }
 
     #[test]
@@ -329,7 +335,10 @@ mod tests {
     fn xml_to_mxml_simple() {
         let source = "<tagname></tagname>";
         let expected = "<tagname> {}";
-        assert_eq!(xml_scopes_to_mxml(source.into(), HashSet::new()).unwrap(), expected);
+        assert_eq!(
+            xml_scopes_to_mxml(source.into(), HashSet::new()).unwrap(),
+            expected
+        );
     }
 
     #[test]
