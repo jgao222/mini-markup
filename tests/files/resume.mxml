@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!--
+  Jason Gao
+  3/30/21
+  CSE 154
+  This is a resume I made in a previous class converted to a website.
+-->
+
+<html> {
+  <head> {
+    <title> {Jason Gao - Resume Page}
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  }
+  <body> {
+    <section> {
+      <h1> {Jason Gao}
+      <p> {jgao222@uw.edu | jasondgao222@gmail.com | (503)515-8053}
+    }
+    <section> {
+      <h2> {Qualifications}
+      <ul> {
+        <li> {Eager to to learn and apply knowledge across fields}
+        <li> {Effective cooperation and teamwork skills}
+        <li> {
+          Programming experience with Java and Python for
+          object-oriented design, data structures, and data processing/visualization.
+          Basic web development skills with HTML and CSS.
+        }
+      }
+    }
+    <section> {
+      <h2> {Education}
+      <section> {
+        <h3> {University of Washington - Seattle, WA}
+        <p class="date-subtext"> {Expected Graduation: June 2024}
+        <ul> {
+          <li> {Engineering DTC admit}
+          <li> {Interdisciplinary Honors Program}
+          <li> {
+            Relevant coursework (through Spring 2021): Multivariable Calculus,
+            Linear Algebra, Differential Equations, Computer Programming I/II,
+            Data Programming, Honors Physics.
+          }
+        }
+      }
+      <section> {
+        <h3> {Lakeridge High School - Lake Oswego, OR}
+        <p class="date-subtext"> {September 2016 - June 2020}
+        <ul> {
+          <li> {National Merit Scholar, AP Scholar with Distinction}
+          <li> {French National Honor Society Member}
+          <li> {Varsity Speech and Debate}
+        }
+      }
+    }
+    <section> {
+      <h2> {Experience}
+      <section> {
+        <h3> {Moreland Farmers Market - Portland, OR}
+        <p class="date-subtext"> {July 2018 - August 2018}
+        <ul> {
+          <li> {
+            Worked with a sales representative of Jacobsen’s Salt Company in
+            making product transactions
+          }
+          <li> {
+            Assisted with preparing and removing market placement, and with the
+            arrangement and display of products
+          }
+        }
+      }
+    }
+    <footer> {
+      Jason Gao 2021
+    }
+  }
+}
