@@ -64,7 +64,16 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
     let mut out = String::new();
 
     let mut in_closing_tag = false;
+    let mut in_comment = false;
     for (index, char) in chars.iter().enumerate() {
+        // if inside comment override everything
+        if in_comment {
+            out.push(*char);
+            if *char == '>' && chars[index - 1] == '-' && chars[index - 2] == '-' {
+                in_comment = false;
+            }
+            continue;
+        }
         // in empty element tag case do default case, no need to open or close any scopes
         if *char == '>' && chars[index - 1] != '/' {
             if in_closing_tag {
@@ -86,24 +95,31 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
                     index
                 ))
             }
-        } else if *char == '<' && chars[index + 1] == '/' {
-            // this assumes all end tags start with `</` and there is no whitespace between < and /
-            // TODO check if this is a reasonable assumption based on XML spec
-            if let Some(XMLTag::End(tag_name)) = find_tag_name_at(&chars, index) {
-                if let Some(matched_name) = tag_name_stack.pop() {
-                    if tag_name == matched_name {
-                        in_closing_tag = true;
+        } else if *char == '<' {
+            if chars[index + 1] == '/' {
+                // this assumes all end tags start with `</` and there is no whitespace between < and /
+                // TODO check if this is a reasonable assumption based on XML spec
+                if let Some(XMLTag::End(tag_name)) = find_tag_name_at(&chars, index) {
+                    if let Some(matched_name) = tag_name_stack.pop() {
+                        if tag_name == matched_name {
+                            in_closing_tag = true;
+                        } else {
+                            bail!(format!("Mismatched end tag at position {index}"))
+                        }
                     } else {
-                        bail!(format!("Mismatched end tag at position {index}"))
+                        bail!(format!("Extra unmatched end tag at position {index}"))
                     }
                 } else {
-                    bail!(format!("Extra unmatched end tag at position {index}"))
+                    bail!(format!(
+                        "Couldn't find well-formed tag around position {}",
+                        index
+                    ))
                 }
+            } else if chars[index + 1..index + 4].iter().collect::<String>() == "!--" {
+                in_comment = true;
+                out.push(*char);
             } else {
-                bail!(format!(
-                    "Couldn't find well-formed tag around position {}",
-                    index
-                ))
+                out.push(*char);
             }
         } else if !in_closing_tag {
             out.push(*char);
@@ -128,7 +144,17 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
     let chars: Vec<char> = source.chars().collect();
     let mut out = String::new();
 
+    let mut in_comment = false;
+
     for (index, char) in chars.iter().enumerate() {
+        // if inside comment override everything
+        if in_comment {
+            out.push(*char);
+            if *char == '>' && chars[index - 1] == '-' && chars[index - 2] == '-' {
+                in_comment = false;
+            }
+            continue;
+        }
         match char {
             '{' => {
                 if let Some(tag_name) = find_tag_name_before_scope(&chars, index) {
@@ -138,7 +164,7 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
                     //       which would fix a few of the issues and undefined behaviors
 
                     // all that has to be done for now though for mxml -> html is to bail here
-                    println!("{tag_name}");
+                    println!("{tag_name}"); // TODO println
                     if void_element_tags.contains(tag_name.as_str()) {
                         bail!(format!("Invalid tag before scope at {index}"))
                     }
@@ -159,6 +185,12 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
                     // also need to solve this with the TODO above
                     bail!("Unmatched closing tag");
                 }
+            }
+            '<' => {
+                if chars[index + 1..index + 4].iter().collect::<String>() == "!--" {
+                    in_comment = true;
+                }
+                out.push(*char);
             }
             _ => out.push(*char),
         }
@@ -320,5 +352,17 @@ mod tests {
         let source = "<notag src=\"abc\"/>\n<div>\n    text\n</div>";
         let expected = "<notag src=\"abc\"/>\n<div> {\n    text\n}";
         assert_eq!(html_to_mxml(source.into()).unwrap(), expected);
+    }
+
+    #[test]
+    fn xml_to_mxml_comments_ignored() {
+        let source = "<!-- <this would=\"be a tag\"></this but it's in a comment> -->";
+        assert_eq!(xml_to_mxml(source.into()).unwrap(), source);
+    }
+
+    #[test]
+    fn mxml_to_xml_comments_ignored() {
+        let source = "<!-- <this would be valid mxml> { but it's in a comment } -->";
+        assert_eq!(mxml_to_xml(source.into()).unwrap(), source);
     }
 }
