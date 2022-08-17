@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use args::Args;
 use clap::Parser;
-use mini_markup::mxml_to_xml;
+use mini_markup::{mxml_to_xml, xml_to_mxml};
 use std::fs;
 
 mod args;
@@ -35,12 +35,17 @@ fn main() -> Result<()> {
 
     p.print("Reading file... ");
 
-    let f = fs::read_to_string(&args.input_file).context("failed to read file")?;
+    let file_string = fs::read_to_string(&args.input_file).context("failed to read file")?;
 
     p.println("File read success");
     p.print("Performing conversion... ");
 
-    let result = mxml_to_xml(f).context("mxml conversion failed")?;
+    let function = match args.target {
+        Some(args::Target::MXML) => xml_to_mxml,
+        Some(args::Target::XML) | None => mxml_to_xml,
+    };
+
+    let result = function(file_string).context("mxml conversion failed")?;
     p.println("Conversion success");
 
     p.println("Attempting file write");
