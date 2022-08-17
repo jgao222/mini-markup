@@ -4,7 +4,7 @@ Mini-markup is a CLI program to convert between a miniature XML-like syntax and 
 ### New Syntax
 Write this:
 ```xml
-<!-- file.txt -->
+<!-- file1.txt -->
 <tagName attribute="value"> {
     <childTag> {
         Content goes here!
@@ -13,7 +13,7 @@ Write this:
 ```
 and call `./mini_markup(.exe) file1.txt file2.txt` to convert it to this:
 ```xml
-<!-- file.txt -->
+<!-- file2.txt -->
 <tagName attribute="value">
     <childTag>
         Content goes here!
