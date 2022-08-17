@@ -1,37 +1,58 @@
 /// Library functions for the mxml-conversion program
+use std::collections::HashSet;
 use anyhow::{bail, Result};
 
-/// Convert a file from MXML (curly brackets) into XML (end tags)
+
+// see https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+// !DOCTYPE is also included, since in raw form it looks like an unclosed html tag
+pub const HTML_VOID_ELEMENTS: [&str; 14] = ["!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"];
+// we will need to construct this into a set every time it is needed, is that worth it?
+
+/// Convert from MXML (curly brackets) into XML (end tags)
 /// # Params
-/// source - the source MXML file as a String
+/// source - the source MXML as a String
 pub fn mxml_to_xml(source: String) -> Result<String> {
-    let scopes_converted = mxml_scopes_to_xml(source)?;
+    let scopes_converted = mxml_scopes_to_xml(source, HashSet::new())?;
     let escapes_converted = replace_bracket_escapes(scopes_converted);
     Ok(escapes_converted)
 }
 
-/// Convert a file from XML to MXML
+/// Convert XML to MXML
 /// # Params
-/// source - the source XML file as a String
+/// source - the source XML as a String
 pub fn xml_to_mxml(source: String) -> Result<String> {
+    xml_scopes_to_mxml(source, HashSet::new())
+}
+
+/// Convert MXML to HTML, being aware of HTML5 void elements
+/// # Params
+/// source - the source MXML as a string
+pub fn mxml_to_html(source: String) -> Result<String> {
+    let scopes_converted = mxml_scopes_to_xml(source, HashSet::from(HTML_VOID_ELEMENTS))?;
+    let escapes_converted = replace_bracket_escapes(scopes_converted);
+    Ok(escapes_converted)
+}
+
+/// Converts HTML to MXML, being aware of HTML5 void elements
+/// # Params
+/// source - the source HTML as a String
+pub fn html_to_mxml(source: String) -> Result<String> {
+    xml_scopes_to_mxml(source, HashSet::from(HTML_VOID_ELEMENTS))
+}
+
+/// converts xml scopes to mxml
+/// # Params
+/// source - xml text
+/// void_element_tags - a set of tags which are allowed to be empty-element tags without `/>` at the end
+fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Result<String> {
     // do a similar thing, parsing tags into stack
     // append ` {` after every opening tag
     // upon encountering end tag w/ same tag name as top of stack which should be always?
     // just replace with `}`
 
     // How to solve problem of self-closing tags?
-    // - they won't have a corresponding end tag
-    // - shouldn't put an opening scope `{` after it
-    // - can't tell if a tag is self-closing? need to parse until we should find
-    // - an end tag? then decide to put brackets or not? will be inefficient
-    // - if we just insert, will be more complicated if we do recursively
-
-    // solution - two pass
-    // 1st pass put all end tags, in order, into stack
-    // second pass, upon encountered every opening tag, check the top end tag
-    // and if it matches it should be the corresponding one?
-    // won't directly work, need to reverse order of closing tags in the level of nesting
-    // otherwise matching the first opening one to the last closing one will happen
+    // - new solution, get the names of the tags which are allowed to not close themselves
+    // - but still be empty-element tags and check for those
 
     // or just focus on converting well-formed XML? XML requires self-closing tags
     // to end in `/>`, so it would be possible to check
@@ -50,9 +71,15 @@ pub fn xml_to_mxml(source: String) -> Result<String> {
                 out.push('}'); // the end of the scope
                 in_closing_tag = false;
             } else if let Some(XMLTag::Start(tag_name)) = find_tag_name_at(&chars, index) {
-                tag_name_stack.push(tag_name);
-                out.push_str("> {"); // yes this is hardcoded
-                                     // TODO make whitespace customizable?
+                // if the tag is void-element (allowed to be empty element without closing `/>`)
+                // don't add it to stack of tags that need to be closed, don't add curly brace
+                if !void_element_tags.contains(tag_name.as_str()) {
+                    tag_name_stack.push(tag_name);
+                    out.push_str("> {"); // yes this is hardcoded
+                    // TODO make whitespace customizable?
+                } else {
+                    out.push('>');
+                }
             } else {
                 bail!(format!(
                     "Couldn't find well-formed tag around position {}",
@@ -82,11 +109,18 @@ pub fn xml_to_mxml(source: String) -> Result<String> {
             out.push(*char);
         }
     }
+    if !tag_name_stack.is_empty() {
+        bail!("Unmatched start tag(s) present")
+    }
 
     Ok(out)
 }
 
-fn mxml_scopes_to_xml(source: String) -> Result<String> {
+/// converts mxml scopes to xml
+/// # Params
+/// source - xml text
+/// void_element_tags - a set of tags which are allowed to be empty-element tags without `/>` at the end
+fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Result<String> {
     // TODO this also won't work if there are curly braces in other parts of the html file,
     // like if a CSS file is inlined in stylesheet tag, or if JavaScript is inlined in a script tag
     let mut tag_stack: Vec<String> = Vec::new();
@@ -98,6 +132,16 @@ fn mxml_scopes_to_xml(source: String) -> Result<String> {
         match char {
             '{' => {
                 if let Some(tag_name) = find_tag_name_before_scope(&chars, index) {
+                    // TODO: currently handling void element tags before scopes as invalid,
+                    //       but in the future might be able to just ignore curly braces
+                    //       that don't have valid preceding tags, and just leave them in
+                    //       which would fix a few of the issues and undefined behaviors
+
+                    // all that has to be done for now though for mxml -> html is to bail here
+                    println!("{tag_name}");
+                    if void_element_tags.contains(tag_name.as_str()) {
+                        bail!(format!("Invalid tag before scope at {index}"))
+                    }
                     tag_stack.push(tag_name);
                 } else {
                     // TODO: this currently disallows empty scopes, when we could potentially
@@ -198,7 +242,9 @@ enum XMLTag {
 
 #[cfg(test)]
 mod tests {
-    use crate::{find_tag_name_before_scope, mxml_scopes_to_xml, replace_bracket_escapes};
+    use std::collections::HashSet;
+
+    use crate::*;
 
     #[test]
     fn bracket_escapes_single() {
@@ -222,7 +268,7 @@ mod tests {
     fn conversion_simple() {
         let source = "<tagname> {}";
         let expected = "<tagname></tagname>";
-        assert_eq!(mxml_scopes_to_xml(source.into()).unwrap(), expected);
+        assert_eq!(mxml_scopes_to_xml(source.into(), HashSet::new()).unwrap(), expected);
     }
 
     #[test]
@@ -245,5 +291,34 @@ mod tests {
     fn find_tag_name_none_simple() {
         let chars: Vec<char> = "text {".chars().collect();
         assert!(find_tag_name_before_scope(&chars, 5).is_none());
+    }
+
+    #[test]
+    fn xml_to_mxml_simple() {
+        let source = "<tagname></tagname>";
+        let expected = "<tagname> {}";
+        assert_eq!(xml_scopes_to_mxml(source.into(), HashSet::new()).unwrap(), expected);
+    }
+
+    #[test]
+    fn mxml_to_html_error_simple() {
+        let source = "<img src=\"totally_real_src.png\"> {}";
+        let result = mxml_to_html(source.into());
+        println!("{:?}", result);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn html_to_mxml_ignore_void() {
+        let source = "<img src=\"abc\">\n<div>\n    text\n</div>";
+        let expected = "<img src=\"abc\">\n<div> {\n    text\n}";
+        assert_eq!(html_to_mxml(source.into()).unwrap(), expected);
+    }
+
+    #[test]
+    fn html_to_mxml_ignore_properly_closed() {
+        let source = "<notag src=\"abc\"/>\n<div>\n    text\n</div>";
+        let expected = "<notag src=\"abc\"/>\n<div> {\n    text\n}";
+        assert_eq!(html_to_mxml(source.into()).unwrap(), expected);
     }
 }

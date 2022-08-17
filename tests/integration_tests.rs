@@ -12,7 +12,7 @@ macro_rules! test_file_conversion_to_xml {
             if actual == expected {
                 Ok(())
             } else {
-                Err(anyhow!("Test failed, {} != {}", actual, expected))
+                Err(anyhow!("Test failed,\n{}\n!=\n{}", actual, expected))
             }
         }
     };
@@ -28,7 +28,7 @@ macro_rules! test_file_conversion_from_xml {
             if actual == expected {
                 Ok(())
             } else {
-                Err(anyhow!("Test failed, {} != {}", actual, expected))
+                Err(anyhow!("Test failed,\n{}\n!=\n{}", actual, expected))
             }
         }
     };
@@ -71,4 +71,16 @@ test_file_conversion_from_xml!(
     file_simple_from_xml,
     "./tests/files/expected1.txt",
     "./tests/files/test1.txt"
+);
+
+test_file_conversion_to_xml!(
+    readme_test_to_xml,
+    "./tests/files/test_readme.txt",
+    "./tests/files/test_readme_expected.txt"
+);
+
+test_file_conversion_from_xml!(
+    readme_test_from_xml,
+    "./tests/files/test_readme_expected.txt",
+    "./tests/files/test_readme.txt"
 );
