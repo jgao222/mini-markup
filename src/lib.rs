@@ -1,10 +1,44 @@
 /// Library functions for the mxml-conversion program
 use anyhow::{bail, Result};
+use Tag::*;
 
+/// Convert a file from MXML (curly brackets) into XML (end tags)
+/// # Params
+/// source - the source MXML file as a String
 pub fn mxml_to_xml(source: String) -> Result<String> {
     let scopes_converted = mxml_scopes_to_xml(source)?;
     let escapes_converted = replace_bracket_escapes(scopes_converted);
     Ok(escapes_converted)
+}
+
+/// Convert a file from XML to MXML
+/// # Params
+/// source - the source XML file as a String
+pub fn xml_to_mxml(source: String) -> Result<String> {
+    // do a similar thing, parsing tags into stack
+    // append ` {` after every opening tag
+    // upon encountering end tag w/ same tag name as top of stack which should be always?
+    // just replace with `}`
+
+    // How to solve problem of self-closing tags?
+    // - they won't have a corresponding end tag
+    // - shouldn't put an opening scope `{` after it
+    // - can't tell if a tag is self-closing? need to parse until we should find
+    // - an end tag? then decide to put brackets or not? will be inefficient
+    // - if we just insert, will be more complicated if we do recursively
+
+    // solution - two pass
+    // 1st pass put all end tags, in order, into stack
+    // second pass, upon encountered every opening tag, check the top end tag
+    // and if it matches it should be the corresponding one?
+    // won't directly work, need to reverse order of closing tags in the level of nesting
+    // otherwise matching the first opening one to the last closing one will happen
+
+    // or just focus on converting well-formed XML? XML requires self-closing tags
+    // to end in `/>`, so it would be possible to check
+    // not so easy with HTML though.
+
+    todo!()
 }
 
 fn mxml_scopes_to_xml(source: String) -> Result<String> {
@@ -23,6 +57,7 @@ fn mxml_scopes_to_xml(source: String) -> Result<String> {
                 } else {
                     // TODO: this currently disallows empty scopes, when we could potentially
                     //       consider replacing via default value or nothing at all
+                    //       Something to consider might be just leaving unrecognized brackets in
                     bail!(format!("Couldn't find a tag before the scope at {}", index))
                 }
                 // we just found a tag, so remove whitespace b/w opening tag and scope opener
@@ -68,27 +103,50 @@ fn find_tag_name_before_scope(chars: &[char], index: usize) -> Option<String> {
         // this indicates either unclosed tag before the scope, or no tag before the scope
         return None;
     }
-    // check if this is a self-closing tag, for html5 self closing is optional so it must be checked against on its own
-    // if the tag before this scope opens is self-closing, it is not associated with this scope, and
-    // so this scope should be handled like a tag-less scope
-    if chars[index - 1] == '/' {
-        return None;
-    }
     // otherwise go ahead and find the tag name, which should be the first segment of characters
     // after the opening `<`, before the first space (or the closing `>` if no space/attrs)
-    let mut index_space = index;
-    while index > 0 && chars[index] != '<' {
-        if chars[index].is_whitespace() {
-            index_space = index;
+    match find_tag_name_at(chars, index) {
+        Some(StartTag(s)) => Some(s),  // only take start tags
+        _ => None  // reject if it was a self-closing or end tag!
+    }
+}
+
+/// Find the name of the tag given either the index of the starting angle bracket
+/// or the ending angle bracket
+/// # Params
+/// chars - a slice of characters to search in for the tag name
+/// index - the starting index to look from
+/// # Preconditions
+/// `index` is the index of either the starting `<` or ending `>` of the tag
+fn find_tag_name_at(chars: &[char], index: usize) -> Option<Tag> {
+    let mut index = index;
+    if chars[index] == '>' {
+        while index > 0 && chars[index] != '<' {
+            index -= 1;
         }
-        index -= 1;
     }
     if chars[index] != '<' {
-        // something weird happened, we got to start of file without finding tag opener
         return None;
     }
-    Some(chars[index + 1..index_space].iter().collect())
+    let mut index_space = index;
+    while !chars[index_space].is_whitespace() && chars[index_space] != '>' {
+        index_space += 1;
+    }
+    if chars[index + 1] == '/' {
+        Some(EndTag(chars[index + 2..index_space].iter().collect()))
+    } else if chars[index_space - 1] == '/' {
+        Some(EmptyElementTag(chars[index + 1..index_space - 1].iter().collect()))
+    } else {
+        Some(StartTag(chars[index + 1..index_space].iter().collect()))
+    }
 }
+
+enum Tag {
+    StartTag(String),
+    EndTag(String),
+    EmptyElementTag(String),
+}
+
 
 #[cfg(test)]
 mod tests {
