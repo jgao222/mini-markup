@@ -162,7 +162,9 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
             '{' => {
                 // this is ugly
                 let tag_name = find_tag_name_before_scope(&chars, index);
-                if tag_name.is_some() && !void_element_tags.contains(tag_name.clone().unwrap().as_str()) {
+                if tag_name.is_some()
+                    && !void_element_tags.contains(tag_name.clone().unwrap().as_str())
+                {
                     tag_stack.push(tag_name);
                 } else {
                     // unknown curly braces are ignored, and left as is
@@ -173,19 +175,17 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
                 // we just found a tag, so remove whitespace b/w opening tag and scope opener
                 out = out.trim().to_string(); // this may be inefficient
             }
-            '}' => {
-                match tag_stack.pop() {
-                    Some(Some(tag)) => {
-                        out.push_str(format!("</{}>", tag).as_str());
-                    }
-                    Some(None) => {
-                        out.push('}');
-                    }
-                    None => {
-                        bail!("Unmatched closing tag")
-                    }
+            '}' => match tag_stack.pop() {
+                Some(Some(tag)) => {
+                    out.push_str(format!("</{}>", tag).as_str());
                 }
-            }
+                Some(None) => {
+                    out.push('}');
+                }
+                None => {
+                    bail!("Unmatched closing tag")
+                }
+            },
             '<' => {
                 if chars[index + 1..index + 4].iter().collect::<String>() == "!--" {
                     in_comment = true;
@@ -211,7 +211,7 @@ fn replace_bracket_escapes(source: String) -> String {
 
 // Replaces the left and right curly braces with escape codes, inverse to `replace_bracket_escapes`
 fn replace_brackets(source: String) -> String {
-    source.replace("{", "&lbrkt;").replace("}", "&rbrkt;")
+    source.replace('{', "&lbrkt;").replace('}', "&rbrkt;")
 }
 
 /// finds the name of the tag appearing before the scope opened by a bracket at
@@ -313,7 +313,10 @@ mod tests {
     #[test]
     fn replace_brackets_inverse_of_replace_escapes() {
         let source = "&lbrkt; abcdefg&rbrkt;".to_string();
-       assert_eq!(source, replace_brackets(replace_bracket_escapes(source.clone())))
+        assert_eq!(
+            source,
+            replace_brackets(replace_bracket_escapes(source.clone()))
+        )
     }
 
     #[test]

@@ -30,12 +30,7 @@ macro_rules! test_file_conversion {
 //         Err(anyhow!("Test failed"))
 //     }
 // }
-test_file_conversion!(
-    file_simple,
-    mxml_to_xml,
-    "test1.txt",
-    "expected1.txt"
-);
+test_file_conversion!(file_simple, mxml_to_xml, "test1.txt", "expected1.txt");
 
 // #[test]
 // fn conversion_file_with_escapes() -> Result<()> {
@@ -48,12 +43,7 @@ test_file_conversion!(
 //         Err(anyhow!("Test failed, {} != {}", actual, expected))
 //     }
 // }
-test_file_conversion!(
-    file_with_escapes,
-    mxml_to_xml,
-    "test2.txt",
-    "expected2.txt"
-);
+test_file_conversion!(file_with_escapes, mxml_to_xml, "test2.txt", "expected2.txt");
 
 test_file_conversion!(
     file_simple_from_xml,
