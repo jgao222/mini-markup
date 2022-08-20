@@ -122,3 +122,10 @@ test_file_conversion!(
     "curly_braces_in_attr.txt",
     "curly_braces_in_attr.txt"
 );
+
+test_file_conversion!(
+    ignore_tagless_braces,
+    mxml_to_xml,
+    "ignore_tagless_curly_braces.txt",
+    "ignore_tagless_curly_braces_expected.txt"
+);

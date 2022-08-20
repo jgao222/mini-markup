@@ -144,7 +144,7 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
 fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Result<String> {
     // TODO this also won't work if there are curly braces in other parts of the html file,
     // like if a CSS file is inlined in stylesheet tag, or if JavaScript is inlined in a script tag
-    let mut tag_stack: Vec<String> = Vec::new();
+    let mut tag_stack: Vec<Option<String>> = Vec::new();
 
     let chars: Vec<char> = source.chars().collect();
     let mut out = String::new();
@@ -162,32 +162,30 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
         }
         match char {
             '{' => {
-                if let Some(tag_name) = find_tag_name_before_scope(&chars, index) {
-                    // TODO: currently handling void element tags before scopes as invalid,
-                    //       but in the future might be able to just ignore curly braces
-                    //       that don't have valid preceding tags, and just leave them in
-                    //       which would fix a few of the issues and undefined behaviors
-
-                    // all that has to be done for now though for mxml -> html is to bail here
-                    if void_element_tags.contains(tag_name.as_str()) {
-                        bail!(format!("Invalid tag before scope at {index}"))
-                    }
+                // this is ugly
+                let tag_name = find_tag_name_before_scope(&chars, index);
+                if tag_name.is_some() && !void_element_tags.contains(tag_name.clone().unwrap().as_str()) {
                     tag_stack.push(tag_name);
                 } else {
-                    // TODO: this currently disallows empty scopes, when we could potentially
-                    //       consider replacing via default value or nothing at all
-                    //       Something to consider might be just leaving unrecognized brackets in
-                    bail!(format!("Couldn't find a tag before the scope at {}", index))
+                    // unknown curly braces are ignored, and left as is
+                    out.push(*char);
+                    // put None on the stack to signal to ignore the matching }
+                    tag_stack.push(None);
                 }
                 // we just found a tag, so remove whitespace b/w opening tag and scope opener
                 out = out.trim().to_string(); // this may be inefficient
             }
             '}' => {
-                if let Some(tag) = tag_stack.pop() {
-                    out.push_str(format!("</{}>", tag).as_str());
-                } else {
-                    // also need to solve this with the TODO above
-                    bail!("Unmatched closing tag");
+                match tag_stack.pop() {
+                    Some(Some(tag)) => {
+                        out.push_str(format!("</{}>", tag).as_str());
+                    }
+                    Some(None) => {
+                        out.push('}');
+                    }
+                    None => {
+                        bail!("Unmatched closing tag")
+                    }
                 }
             }
             '<' => {
@@ -362,13 +360,14 @@ mod tests {
         );
     }
 
-    #[test]
-    fn mxml_to_html_error_simple() {
-        let source = "<img src=\"totally_real_src.png\"> {}";
-        let result = mxml_to_html(source.into());
-        println!("{:?}", result);
-        assert!(result.is_err());
-    }
+    // as of 8/20/22 this is no longer an error case, unknown braces are simply ignored
+    // #[test]
+    // fn mxml_to_html_error_simple() {
+    //     let source = "<img src=\"totally_real_src.png\"> {}";
+    //     let result = mxml_to_html(source.into());
+    //     println!("{:?}", result);
+    //     assert!(result.is_err());
+    // }
 
     #[test]
     fn html_to_mxml_ignore_void() {
