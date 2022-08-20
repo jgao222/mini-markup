@@ -1,0 +1,14 @@
+<style> {
+    p &lbrkt;
+        text-align: center;
+    &rbrkt;
+}
+
+<body> {
+    <p> {
+        lorem ispum
+    }
+    <p> {
+        lorem ipsum
+    }
+}

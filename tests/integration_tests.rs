@@ -104,3 +104,21 @@ test_file_conversion!(
     "resume.mxml",
     "resume.html"
 );
+
+test_file_conversion!(
+    replace_existing_brackets_with_escapes,
+    html_to_mxml,
+    "curly_braces_in_attr.txt",
+    "curly_braces_in_attr_expected.txt"
+);
+
+fn html_to_mxml_to_html(source: String) -> Result<String> {
+    mxml_to_html(html_to_mxml(source)?)
+}
+
+test_file_conversion!(
+    from_html_and_back_is_identity,
+    html_to_mxml_to_html,
+    "curly_braces_in_attr.txt",
+    "curly_braces_in_attr.txt"
+);

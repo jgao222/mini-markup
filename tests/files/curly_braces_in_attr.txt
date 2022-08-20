@@ -1,0 +1,14 @@
+<style>
+    p {
+        text-align: center;
+    }
+</style>
+
+<body>
+    <p>
+        lorem ispum
+    </p>
+    <p>
+        lorem ipsum
+    </p>
+</body>

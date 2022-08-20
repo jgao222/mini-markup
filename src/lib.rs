@@ -23,6 +23,7 @@ pub fn mxml_to_xml(source: String) -> Result<String> {
 /// # Params
 /// source - the source XML as a String
 pub fn xml_to_mxml(source: String) -> Result<String> {
+    let source = replace_brackets(source);
     xml_scopes_to_mxml(source, HashSet::new())
 }
 
@@ -39,6 +40,7 @@ pub fn mxml_to_html(source: String) -> Result<String> {
 /// # Params
 /// source - the source HTML as a String
 pub fn html_to_mxml(source: String) -> Result<String> {
+    let source = replace_brackets(source);
     xml_scopes_to_mxml(source, HashSet::from(HTML_VOID_ELEMENTS))
 }
 
@@ -167,7 +169,6 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
                     //       which would fix a few of the issues and undefined behaviors
 
                     // all that has to be done for now though for mxml -> html is to bail here
-                    println!("{tag_name}"); // TODO println
                     if void_element_tags.contains(tag_name.as_str()) {
                         bail!(format!("Invalid tag before scope at {index}"))
                     }
@@ -210,6 +211,11 @@ fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Resul
 fn replace_bracket_escapes(source: String) -> String {
     // a manual implementation could be more efficient in one pass as opposed to probably two
     source.replace("&lbrkt;", "{").replace("&rbrkt;", "}")
+}
+
+// Replaces the left and right curly braces with escape codes, inverse to `replace_bracket_escapes`
+fn replace_brackets(source: String) -> String {
+    source.replace("{", "&lbrkt;").replace("}", "&rbrkt;")
 }
 
 /// finds the name of the tag appearing before the scope opened by a bracket at
@@ -300,6 +306,18 @@ mod tests {
     fn bracket_escapes_with_other_characters() {
         let source = "&lbrkt; abcdefg&rbrkt;".to_string();
         assert_eq!("{ abcdefg}", replace_bracket_escapes(source))
+    }
+
+    #[test]
+    fn brackets_replaced_by_escapes() {
+        let source = "{".to_string();
+        assert_eq!("&lbrkt;", replace_brackets(source))
+    }
+
+    #[test]
+    fn replace_brackets_inverse_of_replace_escapes() {
+        let source = "&lbrkt; abcdefg&rbrkt;".to_string();
+       assert_eq!(source, replace_brackets(replace_bracket_escapes(source.clone())))
     }
 
     #[test]
