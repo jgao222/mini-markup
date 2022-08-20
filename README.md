@@ -45,3 +45,8 @@ For example, something like this `<tag> { some text { no tag? } }` will result i
 
     However, repeated conversions back and forth will not be identical here, since the standard
 MXML form should use `&lbrkt;` and `&rbrkt;` anyways.
+
+3. Converting to and from HTML requires passing the `--html` or `-h` flag to the program since
+HTML5 allows [void-element tags](https://html.spec.whatwg.org/multipage/syntax.html#void-elements): tags which are allowed to act like empty-element tags, but
+without indicating they are self closing by ending in `/>`. Since these look exactly like
+start tags, processing them correctly requires knowing they exists. Please use `-h` when `.html` are involved.
