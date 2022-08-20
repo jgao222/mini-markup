@@ -9,12 +9,16 @@ pub const HTML_VOID_ELEMENTS: [&str; 14] = [
     "source", "track", "wbr",
 ];
 // we will need to construct this into a set every time it is needed, is that worth it?
+const XML_VOID_ELEMENTS: [&str; 1] = [
+    "?xml", // make sure the XML prolog doesn't mess anything up since it isn't closed
+];
+// TODO perhaps we could ignore any tag w/ a name not starting with a conventional a-z letter?
 
 /// Convert from MXML (curly brackets) into XML (end tags)
 /// # Params
 /// source - the source MXML as a String
 pub fn mxml_to_xml(source: String) -> Result<String> {
-    let scopes_converted = mxml_scopes_to_xml(source, HashSet::new())?;
+    let scopes_converted = mxml_scopes_to_xml(source, HashSet::from(XML_VOID_ELEMENTS))?;
     let escapes_converted = replace_bracket_escapes(scopes_converted);
     Ok(escapes_converted)
 }
@@ -24,7 +28,7 @@ pub fn mxml_to_xml(source: String) -> Result<String> {
 /// source - the source XML as a String
 pub fn xml_to_mxml(source: String) -> Result<String> {
     let source = replace_brackets(source);
-    xml_scopes_to_mxml(source, HashSet::new())
+    xml_scopes_to_mxml(source, HashSet::from(XML_VOID_ELEMENTS))
 }
 
 /// Convert MXML to HTML, being aware of HTML5 void elements
