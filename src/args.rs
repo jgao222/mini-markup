@@ -12,7 +12,7 @@ pub struct Args {
     /// Use HTML void-element aware conversion (otherwise HTML conversion may not work correctly)
     pub html: bool,
     #[clap(short, long, arg_enum, value_parser)]
-    /// The target format, defaults to XML
+    /// The target (output) format, defaults to XML
     pub target: Option<Target>,
     #[clap(value_parser)]
     /// The file path of the file to convert from

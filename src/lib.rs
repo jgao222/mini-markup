@@ -142,8 +142,6 @@ fn xml_scopes_to_mxml(source: String, void_element_tags: HashSet<&str>) -> Resul
 /// source - xml text
 /// void_element_tags - a set of tags which are allowed to be empty-element tags without `/>` at the end
 fn mxml_scopes_to_xml(source: String, void_element_tags: HashSet<&str>) -> Result<String> {
-    // TODO this also won't work if there are curly braces in other parts of the html file,
-    // like if a CSS file is inlined in stylesheet tag, or if JavaScript is inlined in a script tag
     let mut tag_stack: Vec<Option<String>> = Vec::new();
 
     let chars: Vec<char> = source.chars().collect();
